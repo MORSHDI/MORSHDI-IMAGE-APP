@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Cinematic Film Still Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono&family=Permanent+Marker&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="index.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/genai": "https://esm.sh/@google/genai@^1.4.0",
+          "react/": "https://aistudiocdn.com/react@^19.1.1/",
+          "react": "https://aistudiocdn.com/react@^19.1.1",
+          "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+          "framer-motion": "https://aistudiocdn.com/framer-motion@^11.3.12"
+        }
+      }
+    </script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body class="bg-[#1E1F20] font-['Inter'] text-gray-300 antialiased">
+    <div
+      class="min-h-screen flex items-center justify-center p-4"
+      role="main"
+    >
+      <div
+        class="bg-[#2a2b2e] px-8 pt-8 pb-6 rounded-2xl shadow-2xl w-full max-w-2xl space-y-6"
+      >
+        <div class="text-center">
+          <h1 class="text-3xl font-bold text-white tracking-tight">
+            Cinematic Film Still Generator
+          </h1>
+          <p class="text-gray-400 mt-2 text-sm">
+            Describe a scene to generate a universal, ultra-realistic cinematic
+            film still.
+          </p>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label
+              for="prompt-input"
+              class="block text-sm font-medium text-gray-400 mb-2"
+              >Prompt</label
+            >
+            <textarea
+              id="prompt-input"
+              rows="4"
+              class="w-full bg-[#353739] border border-gray-600 rounded-lg p-4 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow duration-200 resize-none"
+              placeholder="e.g., A woman with red hair, standing in a neon-lit alley in the rain..."
+              aria-label="Image generation prompt"
+            ></textarea>
+          </div>
+          <div>
+            <label
+              for="negative-prompt-input"
+              class="block text-sm font-medium text-gray-400 mb-2"
+              >Negative Prompt (What to avoid)</label
+            >
+            <textarea
+              id="negative-prompt-input"
+              rows="2"
+              class="w-full bg-[#353739] border border-gray-600 rounded-lg p-4 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow duration-200 resize-none"
+              placeholder="e.g., Deformed, blurry, watermark, text, low quality..."
+              aria-label="Negative prompt"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label
+              for="aspect-ratio-select"
+              class="block text-sm font-medium text-gray-400 mb-2"
+              >Aspect Ratio</label
+            >
+            <select
+              id="aspect-ratio-select"
+              class="w-full bg-[#353739] border border-gray-600 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow duration-200"
+            >
+              <option value="16:9">16:9 (Widescreen)</option>
+              <option value="9:16">9:16 (Vertical)</option>
+              <option value="1:1">1:1 (Square)</option>
+              <option value="4:3">4:3 (Landscape)</option>
+              <option value="3:4">3:4 (Portrait)</option>
+            </select>
+          </div>
+          <div>
+            <label
+              for="quality-preset-select"
+              class="block text-sm font-medium text-gray-400 mb-2"
+              >Quality Preset</label
+            >
+            <select
+              id="quality-preset-select"
+              class="w-full bg-[#353739] border border-gray-600 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow duration-200"
+            >
+              <option value="ultra">Cinematic Ultra (4K+)</option>
+              <option value="hd">High Quality (1080p)</option>
+              <option value="sd">Standard (720p)</option>
+            </select>
+          </div>
+          <div>
+            <label
+              for="camera-view-select"
+              class="block text-sm font-medium text-gray-400 mb-2"
+              >Camera View</label
+            >
+            <select
+              id="camera-view-select"
+              class="w-full bg-[#353739] border border-gray-600 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow duration-200"
+            >
+              <option value="default">Default</option>
+              <option value="close-up">Close-up</option>
+              <option value="wide-shot">Wide Shot</option>
+              <option value="dutch-angle">Dutch Angle</option>
+              <option value="overhead-shot">Overhead Shot</option>
+              <option value="low-angle">Low Angle</option>
+              <option value="establishing-shot">Establishing Shot</option>
+              <option value="point-of-view">Point-of-View (POV)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-4">
+          <button
+            id="generate-button"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-400 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          >
+            Generate
+          </button>
+          <button
+            id="download-button"
+            class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-400 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            aria-label="Download generated image"
+          >
+            Download
+          </button>
+        </div>
+
+        <div class="w-full">
+          <img
+            id="output-image"
+            alt="Generated image"
+            class="w-full rounded-lg hidden"
+          />
+        </div>
+
+        <p id="status" class="text-center text-gray-400 min-h-[24px]"></p>
+
+        <!-- History Section -->
+        <div
+          id="history-container"
+          class="pt-6 border-t border-gray-500/30 mt-6 hidden"
+        >
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold text-white">
+              Generation History
+            </h2>
+            <button
+              id="clear-history-button"
+              class="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+            >
+              Clear History
+            </button>
+          </div>
+          <div
+            id="history-grid"
+            class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3 max-h-48 overflow-y-auto pr-2"
+          >
+            <!-- History items will be populated here -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="index.tsx"></script>
+
+    <div id="banner-root"></div>
+    <script type="text/babel" data-type="module">
+      import React, { useState, useEffect } from 'react';
+      import { createRoot } from 'react-dom/client';
+      import { motion, AnimatePresence } from 'framer-motion';
+
+      const REMIX_IDEAS = [
+        "to generate a movie poster.",
+        "to visualize a product placement.",
+        "to reimagine your character designs.",
+        "to create new scenes",
+        "to preview different camera shots.",
+      ];
+
+      const CloseIcon = () => (
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      );
+
+      const Banner = () => {
+          const [isVisible, setIsVisible] = useState(true);
+          const [index, setIndex] = useState(0);
+
+          useEffect(() => {
+              const intervalId = setInterval(() => {
+                  setIndex(prevIndex => (prevIndex + 1) % REMIX_IDEAS.length);
+              }, 3500);
+
+              return () => clearInterval(intervalId);
+          }, []);
+
+          const handleSelectKeyClick = async (e) => {
+            e.preventDefault();
+            if (window.aistudio?.openSelectKey) {
+              await window.aistudio.openSelectKey();
+            } else {
+              console.log('window.aistudio.openSelectKey() not available.');
+              alert('API key selection is not available in this environment.');
+            }
+          };
+          
+          if (!isVisible) {
+            return null;
+          }
+
+          return (
+              <header className="app-banner">
+                  <div className="app-banner-content">
+                      <div className="banner-left">
+                          <p>Powered by the Gemini API</p>
+                      </div>
+                      <div className="remix-ideas">
+                          <span className="remix-prompt">Remix this app...</span>
+                          <div className="remix-text-container">
+                              <AnimatePresence mode="wait">
+                                  <motion.span
+                                      key={index}
+                                      initial={{ opacity: 0, y: 10 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      exit={{ opacity: 0, y: -10 }}
+                                      transition={{ duration: 0.4, ease: "easeInOut" }}
+                                      className="remix-text"
+                                  >
+                                      {REMIX_IDEAS[index]}
+                                  </motion.span>
+                              </AnimatePresence>
+                          </div>
+                      </div>
+                      <div className="banner-right">
+                          <div className="banner-buttons">
+                              <a
+                                  href="https://aistudio.google.com/apps"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="banner-button button-gemini-chat"
+                              >
+                                  Apps on AI Studio
+                              </a>
+                              <a
+                                  href="#"
+                                  onClick={handleSelectKeyClick}
+                                  className="banner-button button-ai-studio"
+                              >
+                                  Add your API Key
+                              </a>
+                          </div>
+                          <button
+                            className="close-button"
+                            onClick={() => setIsVisible(false)}
+                            aria-label="Close notice">
+                            <CloseIcon />
+                          </button>
+                      </div>
+                  </div>
+              </header>
+          );
+      };
+
+      const container = document.getElementById('banner-root');
+      if (container) {
+        const root = createRoot(container);
+        root.render(<React.StrictMode><Banner /></React.StrictMode>);
+      }
+    </script>
+  </body>
+</html>
